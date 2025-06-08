@@ -1,4 +1,4 @@
-# UNSTOPPABLES-CC
+# CRIC-SYNC
 
 **Unstoppables CC** is a comprehensive cricket team management application built for players, coaches, and managers. The platform streamlines team operations by offering features such as:
 
