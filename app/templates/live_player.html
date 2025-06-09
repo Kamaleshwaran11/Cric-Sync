@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Player Info</title>
+    <style>
+        body { font-family: Arial; background-color: #f9f9f9; padding: 20px; }
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            max-width: 400px;
+            padding: 20px;
+            margin: auto;
+        }
+        .card h2 {
+            text-align: center;
+            color: #333;
+        }
+        .info { margin: 10px 0; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>{{ player.name }}</h2>
+        <div class="info"><strong>Batting Style:</strong> {{ player.batting_style }}</div>
+        <div class="info"><strong>Bowling Style:</strong> {{ player.bowling_style }}</div>
+        <div class="info"><strong>Matches:</strong> {{ player.matches }}</div>
+    </div>
+</body>
+</html>
