@@ -45,14 +45,14 @@
       <nav class="site-navigation position-relative text-right bg-black text-md-right" role="navigation">
         <div class="container position-relative">
           <div class="site-logo">
-            <a href="index.html"><img src="../static/images/logo.png" alt=""></a>
+            <a href="/"><img src="../static/images/logo.png" alt=""></a>
           </div>
 
           <div class="d-inline-block d-md-none ml-md-0 mr-auto py-3"><a href="#" class="site-menu-toggle js-menu-toggle text-white"><span class="icon-menu h3"></span></a></div>
 
           <ul class="site-menu js-clone-nav d-none d-md-block">
             <li class="active"><a href="index.html">HOME</a></li>
-            <li><a href="players">SQUAD</a></li>
+            <li><a href="squad">SQUAD</a></li>
             <li><a href="gallery">GALLERY</a></li>
             <li><a href="matches">MATCHES</a></li>
             <li><a href="about">ABOUT</a></li>
@@ -152,7 +152,7 @@
                   <th>Matches</th>
                   <th>Runs</th>
                   <th>Wickets</th>
-                  <th>MVP</th>
+                  <th>Fielding</th>
                 </tr>
               </thead>
               <tbody id="player-ranking-body">
@@ -198,176 +198,196 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-    // Sample player data
-    const players = [
-      { name: "Arjun Kumar", matches: 12, runs: 420, wickets: 18 },
-      { name: "Rahul Singh", matches: 14, runs: 390, wickets: 22 },
-      { name: "Vikram Patel", matches: 10, runs: 350, wickets: 10 },
-      { name: "Suresh Iyer", matches: 13, runs: 310, wickets: 25 },
-      { name: "Manoj Das", matches: 11, runs: 280, wickets: 15 }
-    ];
+    // Fetch live player data from backend API
+    let players = [];
+    fetch('/api/player-stats')
+      .then(response => response.json())
+      .then(data => {
+      players = data;
+      // The rest of the code (ranking, charts, etc.) should be inside this .then block or in a function called here
+      // Calculate points (simple formula: runs + 20*wickets)
+      players.forEach(p => p.points = p.runs + p.wickets * 20);
 
-    // Calculate points (simple formula: runs + 20*wickets)
-    players.forEach(p => p.points = p.runs + p.wickets * 20);
+      // Sort by points descending
+      const ranked = [...players].sort((a, b) => b.points - a.points);
 
-    // Sort by points descending
-    const ranked = [...players].sort((a, b) => b.points - a.points);
-
-    // Populate ranking table
-    const tbody = document.getElementById('player-ranking-body');
-    ranked.forEach((p, i) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+      // Populate ranking table
+      const tbody = document.getElementById('player-ranking-body');
+      tbody.innerHTML = '';
+      ranked.forEach((p, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
         <td>${i + 1}</td>
         <td>${p.name}</td>
         <td>${p.matches}</td>
         <td>${p.runs}</td>
         <td>${p.wickets}</td>
         <td><strong>${p.points}</strong></td>
-      `;
-      tbody.appendChild(tr);
-    });
+        `;
+        tbody.appendChild(tr);
+      });
 
-    // Analytics: Top 5 run scorers
-    const topRuns = [...players].sort((a, b) => b.runs - a.runs).slice(0, 5);
-    const runsCtx = document.getElementById('runsChart').getContext('2d');
-    new Chart(runsCtx, {
-      type: 'bar',
-      data: {
+      // Analytics: Top 5 run scorers
+      const topRuns = [...players].sort((a, b) => b.runs - a.runs).slice(0, 5);
+      const runsCtx = document.getElementById('runsChart').getContext('2d');
+      new Chart(runsCtx, {
+        type: 'bar',
+        data: {
         labels: topRuns.map(p => p.name),
         datasets: [{
           label: 'Runs',
           data: topRuns.map(p => p.runs),
           backgroundColor: '#17a2b8'
         }]
-      },
-      options: {
+        },
+        options: {
         responsive: true,
         plugins: { legend: { display: false } }
-      }
-    });
+        }
+      });
 
-    // Analytics: Top 5 wicket takers
-    const topWickets = [...players].sort((a, b) => b.wickets - a.wickets).slice(0, 5);
-    const wicketsCtx = document.getElementById('wicketsChart').getContext('2d');
-    new Chart(wicketsCtx, {
-      type: 'bar',
-      data: {
+      // Analytics: Top 5 wicket takers
+      const topWickets = [...players].sort((a, b) => b.wickets - a.wickets).slice(0, 5);
+      const wicketsCtx = document.getElementById('wicketsChart').getContext('2d');
+      new Chart(wicketsCtx, {
+        type: 'bar',
+        data: {
         labels: topWickets.map(p => p.name),
         datasets: [{
           label: 'Wickets',
           data: topWickets.map(p => p.wickets),
           backgroundColor: '#ffc107'
         }]
-      },
-      options: {
+        },
+        options: {
         responsive: true,
         plugins: { legend: { display: false } }
-      }
-    });
-    </script>
+        }
+      });
+      })
+      .catch(err => {
+      console.error('Failed to fetch player stats:', err);
+      });
 
-          <div class="container my-5">
-            <div class="row justify-content-center">
-              <div class="col-lg-8">
-                <h2 class="text-center mb-4">Live Scores &amp; Upcoming Matches</h2>
-                <!-- Live Scores Section -->
-                <div class="card mb-4">
-                  <div class="card-header bg-success text-white">
-                    <strong>Live Match</strong>
-                  </div>
-                  <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                      <span><strong>Unstoppables CC</strong></span>
-                      <span class="h5 mb-0" id="live-score">142/3 (16.2)</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <span><strong>Challengers CC</strong></span>
-                      <span class="h5 mb-0">--</span>
-                    </div>
-                    <div class="mt-2">
-                      <small class="text-muted" id="live-status">Overs: 16.2 | Target: 180 | Status: 2nd Innings in progress</small>
-                    </div>
-                  </div>
-                </div>
-                <!-- Upcoming Matches Section -->
-                <div class="card mb-4">
-                  <div class="card-header bg-primary text-white">
-                    <strong>Upcoming Matches</strong>
-                  </div>
-                  <ul class="list-group list-group-flush" id="upcoming-matches-list">
-                    <!-- Matches will be populated by JS -->
-                  </ul>
-                </div>
-                <!-- Match Creation & Scheduling -->
-                <div class="card mb-4">
-                  <div class="card-header bg-dark text-white">
-                    <strong>Schedule a New Match</strong>
-                  </div>
-                  <div class="card-body">
-                    <form id="match-form" class="row g-2">
-                      <div class="col-md-5 mb-2">
-                        <input type="text" class="form-control" id="teamA" placeholder="Team A" required>
-                      </div>
-                      <div class="col-md-2 text-center mb-2">
-                        <span>vs</span>
-                      </div>
-                      <div class="col-md-5 mb-2">
-                        <input type="text" class="form-control" id="teamB" placeholder="Team B" required>
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <input type="date" class="form-control" id="matchDate" required>
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <input type="time" class="form-control" id="matchTime" required>
-                      </div>
-                      <div class="col-12 text-center">
-                        <button type="submit" class="btn btn-success">Add Match</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-                <!-- Match History -->
-                <div class="card mb-4">
-                  <div class="card-header bg-secondary text-white">
-                    <strong>Match History</strong>
-                  </div>
-                  <ul class="list-group list-group-flush" id="match-history-list">
-                    <!-- History will be populated by JS -->
-                  </ul>
-                </div>
-                <!-- Team Calendar & Notifications -->
-                <div class="card">
-                  <div class="card-header bg-info text-white">
-                    <strong>Team Calendar &amp; Notifications</strong>
-                  </div>
-                  <div class="card-body">
-                    <div id="calendar" class="mb-3"></div>
-                    <div id="notifications" class="alert alert-warning" style="display:none;"></div>
-                  </div>
-                </div>
+    // (Removed duplicate code: all player ranking and chart rendering is handled inside the fetch .then block above)
+    </script>
+    <div class="container my-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h2 class="text-center mb-4">Live Scores &amp; Upcoming Matches</h2>
+          <!-- Live Scores Section -->
+          <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+              <strong>Live Match</strong>
+            </div>
+            <div class="card-body" id="live-match-section">
+              <div class="d-flex justify-content-center">
+                <span class="text-muted">Loading live match...</span>
               </div>
             </div>
           </div>
-          <script>
-          // Sample upcoming matches
-          let upcomingMatches = [
-            { teamA: "Unstoppables CC", teamB: "King Maker CC", date: "2024-06-15", time: "10:00" },
-            { teamA: "Unstoppables CC", teamB: "Warriors XI", date: "2024-06-22", time: "14:00" },
-            { teamA: "Unstoppables CC", teamB: "Titans CC", date: "2024-06-29", time: "09:00" }
-          ];
+          <!-- Upcoming Matches Section -->
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <strong>Upcoming Matches</strong>
+            </div>
+            <ul class="list-group list-group-flush" id="upcoming-matches-list">
+              <li class="list-group-item text-center text-muted">Loading...</li>
+            </ul>
+          </div>
+          <!-- Match Creation & Scheduling -->
+          <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+              <strong>Schedule a New Match</strong>
+            </div>
+            <div class="card-body">
+              <form id="match-form" class="row g-2">
+                <div class="col-md-5 mb-2">
+                  <input type="text" class="form-control" id="teamA" placeholder="Team A" required>
+                </div>
+                <div class="col-md-2 text-center mb-2">
+                  <span>vs</span>
+                </div>
+                <div class="col-md-5 mb-2">
+                  <input type="text" class="form-control" id="teamB" placeholder="Team B" required>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <input type="date" class="form-control" id="matchDate" required>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <input type="time" class="form-control" id="matchTime" required>
+                </div>
+                <div class="col-12 text-center">
+                  <button type="submit" class="btn btn-success">Add Match</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <!-- Match History -->
+          <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+              <strong>Match History</strong>
+            </div>
+            <ul class="list-group list-group-flush" id="match-history-list">
+              <li class="list-group-item text-center text-muted">Loading...</li>
+            </ul>
+          </div>
+          <!-- Team Calendar & Notifications -->
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <strong>Team Calendar &amp; Notifications</strong>
+            </div>
+            <div class="card-body">
+              <div id="calendar" class="mb-3"></div>
+              <div id="notifications" class="alert alert-warning" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    // Fetch live match data
+    function fetchLiveMatch() {
+      fetch('/api/live-match')
+        .then(res => res.json())
+        .then(data => {
+          const section = document.getElementById('live-match-section');
+          if (data && data.teamA && data.teamB) {
+            section.innerHTML = `
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span><strong>${data.teamA}</strong></span>
+                <span class="h5 mb-0" id="live-score">${data.scoreA || '--'}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span><strong>${data.teamB}</strong></span>
+                <span class="h5 mb-0">${data.scoreB || '--'}</span>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted" id="live-status">${data.status || ''}</small>
+              </div>
+            `;
+          } else {
+            section.innerHTML = `<div class="text-center text-muted">No live match at the moment.</div>`;
+          }
+        })
+        .catch(() => {
+          document.getElementById('live-match-section').innerHTML = `<div class="text-center text-muted">Unable to load live match.</div>`;
+        });
+    }
+    fetchLiveMatch();
+    setInterval(fetchLiveMatch, 10000); // Refresh every 10s
 
-          // Sample match history
-          let matchHistory = [
-            { teamA: "Unstoppables CC", teamB: "Challengers CC", date: "2024-06-08", result: "Unstoppables CC won by 5 wickets" },
-            { teamA: "Unstoppables CC", teamB: "Warriors XI", date: "2024-06-01", result: "Warriors XI won by 10 runs" }
-          ];
-
-          // Render upcoming matches
-          function renderUpcomingMatches() {
-            const list = document.getElementById('upcoming-matches-list');
-            list.innerHTML = '';
-            upcomingMatches.forEach(match => {
+    // Fetch upcoming matches
+    function fetchUpcomingMatches() {
+      fetch('/api/upcoming-matches')
+        .then(res => res.json())
+        .then(matches => {
+          const list = document.getElementById('upcoming-matches-list');
+          list.innerHTML = '';
+          if (matches.length === 0) {
+            list.innerHTML = `<li class="list-group-item text-center text-muted">No upcoming matches.</li>`;
+          } else {
+            matches.forEach(match => {
               const li = document.createElement('li');
               li.className = "list-group-item d-flex justify-content-between align-items-center";
               li.innerHTML = `<span>${match.teamA} vs ${match.teamB}</span>
@@ -375,13 +395,25 @@
               list.appendChild(li);
             });
           }
-          renderUpcomingMatches();
+          renderCalendar(matches);
+        })
+        .catch(() => {
+          document.getElementById('upcoming-matches-list').innerHTML = `<li class="list-group-item text-center text-muted">Unable to load upcoming matches.</li>`;
+        });
+    }
+    fetchUpcomingMatches();
 
-          // Render match history
-          function renderMatchHistory() {
-            const list = document.getElementById('match-history-list');
-            list.innerHTML = '';
-            matchHistory.forEach(match => {
+    // Fetch match history
+    function fetchMatchHistory() {
+      fetch('/api/match-history')
+        .then(res => res.json())
+        .then(history => {
+          const list = document.getElementById('match-history-list');
+          list.innerHTML = '';
+          if (history.length === 0) {
+            list.innerHTML = `<li class="list-group-item text-center text-muted">No match history.</li>`;
+          } else {
+            history.forEach(match => {
               const li = document.createElement('li');
               li.className = "list-group-item";
               li.innerHTML = `<strong>${match.teamA} vs ${match.teamB}</strong> <br>
@@ -389,65 +421,60 @@
               list.appendChild(li);
             });
           }
-          renderMatchHistory();
+        })
+        .catch(() => {
+          document.getElementById('match-history-list').innerHTML = `<li class="list-group-item text-center text-muted">Unable to load match history.</li>`;
+        });
+    }
+    fetchMatchHistory();
 
-          // Match creation form
-          document.getElementById('match-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const teamA = document.getElementById('teamA').value.trim();
-            const teamB = document.getElementById('teamB').value.trim();
-            const date = document.getElementById('matchDate').value;
-            const time = document.getElementById('matchTime').value;
-            if (teamA && teamB && date && time) {
-              upcomingMatches.push({ teamA, teamB, date, time });
-              renderUpcomingMatches();
-              showNotification(`Match scheduled: ${teamA} vs ${teamB} on ${new Date(date + 'T' + time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`);
-              this.reset();
-            }
-          });
+    // Match creation form (adds to backend and refreshes upcoming matches)
+    document.getElementById('match-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const teamA = document.getElementById('teamA').value.trim();
+      const teamB = document.getElementById('teamB').value.trim();
+      const date = document.getElementById('matchDate').value;
+      const time = document.getElementById('matchTime').value;
+      if (teamA && teamB && date && time) {
+        fetch('/api/upcoming-matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamA, teamB, date, time })
+        })
+        .then(res => res.json())
+        .then(() => {
+          fetchUpcomingMatches();
+          showNotification(`Match scheduled: ${teamA} vs ${teamB} on ${new Date(date + 'T' + time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`);
+          document.getElementById('match-form').reset();
+        })
+        .catch(() => {
+          showNotification('Failed to schedule match.');
+        });
+      }
+    });
 
-          // Simple calendar: show upcoming matches as a list
-          function renderCalendar() {
-            const calendar = document.getElementById('calendar');
-            calendar.innerHTML = '<ul class="list-unstyled mb-0">' +
-              upcomingMatches.map(m =>
-                `<li><span class="badge badge-primary">${new Date(m.date).toLocaleDateString()}</span> ${m.teamA} vs ${m.teamB} <small>(${m.time})</small></li>`
-              ).join('') +
-              '</ul>';
-          }
-          renderCalendar();
+    // Simple calendar: show upcoming matches as a list
+    function renderCalendar(matches) {
+      const calendar = document.getElementById('calendar');
+      if (!matches || matches.length === 0) {
+        calendar.innerHTML = '<div class="text-muted">No upcoming matches.</div>';
+        return;
+      }
+      calendar.innerHTML = '<ul class="list-unstyled mb-0">' +
+        matches.map(m =>
+          `<li><span class="badge badge-primary">${new Date(m.date).toLocaleDateString()}</span> ${m.teamA} vs ${m.teamB} <small>(${m.time})</small></li>`
+        ).join('') +
+        '</ul>';
+    }
 
-          // Notification system
-          function showNotification(msg) {
-            const notif = document.getElementById('notifications');
-            notif.textContent = msg;
-            notif.style.display = 'block';
-            setTimeout(() => { notif.style.display = 'none'; }, 4000);
-          }
-
-          // Real-time score updates (simulated)
-          setInterval(() => {
-            // Simulate score update
-            const scoreElem = document.getElementById('live-score');
-            const statusElem = document.getElementById('live-status');
-            if (scoreElem && statusElem) {
-              // Randomly increment runs and balls
-              let score = scoreElem.textContent.match(/(\d+)\/(\d+) \((\d+)\.(\d+)\)/);
-              if (score) {
-                let runs = parseInt(score[1]);
-                let wickets = parseInt(score[2]);
-                let overs = parseInt(score[3]);
-                let balls = parseInt(score[4]);
-                if (Math.random() > 0.7 && wickets < 10) wickets++; // random wicket
-                runs += Math.floor(Math.random() * 3); // random runs
-                balls++;
-                if (balls > 5) { overs++; balls = 0; }
-                scoreElem.textContent = `${runs}/${wickets} (${overs}.${balls})`;
-                statusElem.textContent = `Overs: ${overs}.${balls} | Target: 180 | Status: 2nd Innings in progress`;
-              }
-            }
-          }, 5000);
-          </script>
+    // Notification system
+    function showNotification(msg) {
+      const notif = document.getElementById('notifications');
+      notif.textContent = msg;
+      notif.style.display = 'block';
+      setTimeout(() => { notif.style.display = 'none'; }, 4000);
+    }
+    </script>
   
 <!-- Footer -->
 <footer class="site-footer border-top">
@@ -466,18 +493,18 @@
           </div>
             <div class="col-6">
             <ul class="list-unstyled">
-              <li><a href="index.html">HOME</a></li>
-              <li><a href="../static/gallery.html">GALLERY</a></li>
-              <li><a href="../static/squad.html">SQUAD</a></li>
-              <li><a href="../static/contact.html">CONTACT US</a></li>
+              <li><a href="/">HOME</a></li>
+              <li><a href="gallery">GALLERY</a></li>
+              <li><a href="squad">SQUAD</a></li>
+              <li><a href="contact">CONTACT US</a></li>
             </ul>
             </div>
             <div class="col-6">
             <ul class="list-unstyled">
-              <li><a href="../static/about.html">ABOUT US</a></li>
-              <li><a href="../static/src/privacy-policy.html">PRIVACY POLICY</a></li>
-              <li><a href="../static/src/Terms-of-use.html">TERMS OF USE</a></li>
-              <li><a href="../static/src/disclaimer.html">DISCLAIMER</a></li>
+              <li><a href="about">ABOUT US</a></li>
+              <li><a href="privacy-policy">PRIVACY POLICY</a></li>
+              <li><a href="terms">TERMS OF USE</a></li>
+              <li><a href="disclaimer">DISCLAIMER</a></li>
             </ul>
           </div>
         </div>
