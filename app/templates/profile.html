@@ -70,6 +70,29 @@
             </div>
         </div>
     </div>
+
+    <h1>{{ player.name }}</h1>
+    <p><strong>Role:</strong> {{ player.role }}</p>
+    <p><strong>City:</strong> {{ player.city }}</p>
+
+    <h2>Teams</h2>
+    <ul>
+        {% for team in player.teams %}
+            <li>{{ team }}</li>
+        {% else %}
+            <li>No teams found</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Statistics</h2>
+    <ul>
+        {% for label, value in player.stats.items() %}
+            <li><strong>{{ label }}:</strong> {{ value }}</li>
+        {% else %}
+            <li>No stats available</li>
+        {% endfor %}
+    </ul>
+
     <script>
         // Optional: Add a little bounce on image click
         document.addEventListener('DOMContentLoaded', function() {

@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template
 from flask import render_template, request
-from app.scraper import player_stats
+from app.scraper import player_id,player_name
+from bs4 import BeautifulSoup
+import requests
 
 bp = Blueprint('main', __name__)
 
@@ -113,6 +115,48 @@ def player_profile(name):
             return render_template('profile.html', player=player)
     return "Player not found", 404
 
+@bp.route('/player/<player_id>/<player_name>')
+def show_player(player_id, player_name):
+    base_url = f"https://cricheroes.com/player-profile/{player_id}/{player_name}"
+
+    urls = {
+        "profile": f"{base_url}/profile",
+        "stats": f"{base_url}/stats",
+        "teams": f"{base_url}/teams"
+    }
+
+    headers = {"User-Agent": "Mozilla/5.0"}
+    player_data = {}
+
+    # --- Profile Info ---
+    response = requests.get(urls["profile"], headers=headers)
+    if response.ok:
+        soup = BeautifulSoup(response.text, "html.parser")
+        player_data["name"] = soup.select_one("h1").text.strip()
+        player_data["role"] = soup.select_one(".player-role").text.strip() if soup.select_one(".player-role") else "N/A"
+        player_data["city"] = soup.select_one(".player-location").text.strip() if soup.select_one(".player-location") else "N/A"
+
+    # --- Teams ---
+    response = requests.get(urls["teams"], headers=headers)
+    if response.ok:
+        soup = BeautifulSoup(response.text, "html.parser")
+        teams = soup.select(".team-card .team-name")
+        player_data["teams"] = [team.text.strip() for team in teams]
+
+    # --- Stats ---
+    response = requests.get(urls["stats"], headers=headers)
+    player_data["stats"] = {}
+    if response.ok:
+        soup = BeautifulSoup(response.text, "html.parser")
+        stat_cards = soup.select(".card-body .d-flex.flex-column.align-items-center")
+
+        for card in stat_cards:
+            label = card.select_one(".text-muted")
+            value = card.select_one("h5")
+            if label and value:
+                player_data["stats"][label.text.strip()] = value.text.strip()
+
+    return render_template("player.html", player=player_data)
 
 @bp.route('/about')
 def about():

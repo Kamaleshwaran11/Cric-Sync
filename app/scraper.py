@@ -1,71 +1,44 @@
-from flask import Flask, request, jsonify
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 
-app = Flask(__name__)
+player_id = "19059417"
+player_name = "parthii"
 
-def get_player_data(url):
-    try:
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        soup = BeautifulSoup(response.text, "html.parser")
+base_url = f"https://cricheroes.com/player-profile/{player_id}/{player_name}"
 
-        tables = soup.find_all("table")
+urls = {
+    "player-profile": f"{base_url}/profile",
+    "player-stats": f"{base_url}/stats",
+    "player-teams": f"{base_url}/teams"
+}
 
-        def extract_table_data(table):
-            rows = table.find_all("tr")
-            headers = [th.text.strip() for th in rows[0].find_all("th")]
-            total_row = rows[-1]
-            values = [td.text.strip() for td in total_row.find_all("td")]
-            return dict(zip(headers, values))
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
 
-        data = {}
+for key, url in urls.items():
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        print(f"\n--- {key.upper()} ---")
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        if len(tables) >= 1:
-            data["overall_batting"] = extract_table_data(tables[0])
-        if len(tables) >= 2:
-            data["leather_ball_batting"] = extract_table_data(tables[1])
-        if len(tables) >= 3:
-            data["tennis_ball_batting"] = extract_table_data(tables[2])
+        if key == "player-profile":
+            name = soup.select_one("h1").text.strip()
+            role = soup.select_one(".player-role").text.strip() if soup.select_one(".player-role") else "N/A"
+            city = soup.select_one(".player-location").text.strip() if soup.select_one(".player-location") else "N/A"
+            print(f"Name: {name}\nRole: {role}\nCity: {city}")
 
-        return data
-    except Exception as e:
-        return {"error": str(e)}
+        elif key == "player-stats":
+            stats = soup.select("div.stats-card")
+            for stat in stats:
+                label = stat.select_one(".label").text.strip()
+                value = stat.select_one(".value").text.strip()
+                print(f"{label}: {value}")
 
-
-@app.route("/player_stats")
-def player_stats():
-    url = request.args.get("url")
-    if not url:
-        return jsonify({"error": "No URL provided"}), 400
-
-    try:
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        tables = soup.find_all("table")
-
-        def extract_table_data(table):
-            rows = table.find_all("tr")
-            headers = [th.text.strip() for th in rows[0].find_all("th")]
-            total_row = rows[-1]
-            values = [td.text.strip() for td in total_row.find_all("td")]
-            return dict(zip(headers, values))
-
-        result = {}
-
-        # First table: Overall Batting
-        if len(tables) >= 1:
-            result["overall_batting"] = extract_table_data(tables[0])
-
-        # Second table: Leather Ball Batting
-        if len(tables) >= 2:
-            result["leather_ball_batting"] = extract_table_data(tables[1])
-
-        # Third table: Tennis Ball Batting
-        if len(tables) >= 3:
-            result["tennis_ball_batting"] = extract_table_data(tables[2])
-
-        return jsonify(result)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        elif key == "player-teams":
+            teams = soup.select(".team-card .team-name")
+            print("Teams:")
+            for team in teams:
+                print("-", team.text.strip())
+    else:
+        print(f"Failed to fetch {key}. Status code: {response.status_code}")
